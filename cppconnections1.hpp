@@ -1,7 +1,7 @@
 /**
- * @file cppconnections.hpp
+ * @file cppconnections1.hpp
  * @version 1.0.0
- * @brief A minimal signal-slot style callback system for C++.
+ * @brief A minimal self-contained signal-slot style callback system for C++.
  * 
  * This header defines a lightweight, standalone signal/connection mechanism
  * that allows callbacks to be registered and invoked without requiring the
