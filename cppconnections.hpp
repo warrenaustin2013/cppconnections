@@ -3,11 +3,11 @@
  * @version 1.1.0
  * @brief A minimal signal-slot style callback system for C++.
  * @note This library is NOT thread safe and should not be used in a threaded setting!
- * 
+ *
  * This header defines a lightweight, standalone signal/connection mechanism
  * that allows callbacks to be registered and invoked without requiring the
  * C++ standard library or external dependencies.
- * 
+ *
  * @copyright MIT License
  *
  * @details Copyright (c) 2025 warrenaustin2013
@@ -35,21 +35,47 @@
 #define CPP_CONNECTIONS_HEADER_GUARD
 
 #ifndef CPP_CONNECTIONS_MAX_CONNECTIONS
-    /**
-     * @brief Defines the maximum number of simultaneous connections a single signal can hold.
-     * @since 1.0.0
-     *
-     * This macro sets a compile-time constant limiting how many callback connections
-     * can be registered on any one signal instance. It controls the size of the internal
-     * fixed-size array that stores connection objects.
-     *
-     * Increasing this value allows more listeners but increases memory usage,
-     * while lowering it restricts concurrency but reduces memory overhead.
-     */
-    #define CPP_CONNECTIONS_MAX_CONNECTIONS 128
+ /**
+  * @brief Defines the maximum number of simultaneous connections a single signal can hold.
+  * @since 1.0.0
+  *
+  * This macro sets a compile-time constant limiting how many callback connections
+  * can be registered on any one signal instance. It controls the size of the internal
+  * fixed-size array that stores connection objects.
+  *
+  * Increasing this value allows more listeners but increases memory usage,
+  * while lowering it restricts concurrency but reduces memory overhead.
+  */
+#define CPP_CONNECTIONS_MAX_CONNECTIONS 128
 #endif
 
 namespace connections {
+    /**
+     * @brief Custom implementation of move to not rely on the C++ standard library.
+     * @since 1.1.0
+     *
+     * Converts an lvalue into an rvalue reference, enabling move semantics
+     * without relying on the C++ standard library.
+     *
+     * This function is essential for implementing move constructors and
+     * move assignment operators in environments where the standard library
+     * is not used or is unavailable.
+     *
+     * @tparam T The type of the object being cast.
+     * @param t The object to be cast to an rvalue reference.
+     * @return An rvalue reference to the input object.
+     */
+    template<typename T>
+    constexpr T&& move(T& t) noexcept {
+        return static_cast<T&&>(t);
+    }
+
+    template<typename T>
+    constexpr T&& move(T&& t) noexcept {
+        static_assert(!__is_lvalue_reference(T), "Do not pass rvalue to move()");
+        return static_cast<T&&>(t);
+    }
+
     /**
      * @brief Represents an individual registered connection between a signal and a callback.
      * @since 1.0.0
@@ -212,7 +238,7 @@ namespace connections {
          */
         signal(signal&& other) noexcept : active(other.active) {
             for (int i = 0; i < CPP_CONNECTIONS_MAX_CONNECTIONS; ++i) {
-                connections[i] = std::move(other.connections[i]);
+                connections[i] = move(other.connections[i]);
             }
             other.active = false;
         }
@@ -233,7 +259,7 @@ namespace connections {
             if (this != &other) {
                 active = other.active;
                 for (int i = 0; i < CPP_CONNECTIONS_MAX_CONNECTIONS; ++i) {
-                    connections[i] = std::move(other.connections[i]);
+                    connections[i] = move(other.connections[i]);
                 }
                 other.active = false;
             }
